@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidBoundedStringList(arr, maxLen) {
+      return arr is list && arr.size() <= maxLen && (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 64));
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
+             data.language in ['en', 'bn'] &&
+             data.graphicsQuality in ['low', 'medium', 'high'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSaveSlot(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.slotName is string && data.slotName.size() >= 1 && data.slotName.size() <= 40 &&
+             (data.posX is number) && data.posX >= -5000 && data.posX <= 5000 &&
+             (data.posY is number) && data.posY >= -200 && data.posY <= 500 &&
+             (data.posZ is number) && data.posZ >= -5000 && data.posZ <= 5000 &&
+             (data.yaw is number) && data.yaw >= -100 && data.yaw <= 100 &&
+             data.district in ['OLD_DHAKA', 'MODERN_DHAKA', 'RESIDENTIAL', 'VILLAGE', 'COMMERCIAL', 'RIVERSIDE'] &&
+             data.moneyTaka is int && data.moneyTaka >= 0 && data.moneyTaka <= 100000000 &&
+             data.chaosLevel is int && data.chaosLevel >= 0 && data.chaosLevel <= 5 &&
+             (data.timeOfDay is number) && data.timeOfDay >= 0 && data.timeOfDay <= 24 &&
+             data.weather in ['CLEAR', 'CLOUDY', 'RAIN', 'MONSOON', 'FOG'] &&
+             isValidBoundedStringList(data.ownedVehicles, 15) &&
+             isValidBoundedStringList(data.completedMissions, 50) &&
+             isValidBoundedStringList(data.unlockedDistricts, 10) &&
+             isValidBoundedStringList(data.inventoryItems, 40) &&
+             isValidBoundedStringList(data.homeFurniture, 20) &&
+             data.homeLevel is int && data.homeLevel >= 1 && data.homeLevel <= 5 &&
+             data.shirtColor is string && data.shirtColor.size() >= 1 && data.shirtColor.size() <= 24 &&
+             data.pantsColor is string && data.pantsColor.size() >= 1 && data.pantsColor.size() <= 24 &&
+             data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 24 &&
+             data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 24 &&
+             data.hatStyle is string && data.hatStyle.size() >= 1 && data.hatStyle.size() <= 24 &&
+             data.glassesStyle is string && data.glassesStyle.size() >= 1 && data.glassesStyle.size() <= 24 &&
+             data.expression is string && data.expression.size() >= 1 && data.expression.size() <= 24 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'language', 'graphicsQuality', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'language', 'graphicsQuality', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'language', 'graphicsQuality', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /save_slots/{slotId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(slotId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(slotId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'slotName', 'posX', 'posY', 'posZ', 'yaw', 'district',
+                           'moneyTaka', 'chaosLevel', 'timeOfDay', 'weather',
+                           'ownedVehicles', 'completedMissions', 'unlockedDistricts',
+                           'inventoryItems', 'homeFurniture', 'homeLevel',
+                           'shirtColor', 'pantsColor', 'skinTone', 'hairStyle', 'hatStyle',
+                           'glassesStyle', 'expression', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'slotName', 'posX', 'posY', 'posZ', 'yaw', 'district',
+                           'moneyTaka', 'chaosLevel', 'timeOfDay', 'weather',
+                           'ownedVehicles', 'completedMissions', 'unlockedDistricts',
+                           'inventoryItems', 'homeFurniture', 'homeLevel',
+                           'shirtColor', 'pantsColor', 'skinTone', 'hairStyle', 'hatStyle',
+                           'glassesStyle', 'expression', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSaveSlot(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(slotId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidSaveSlot(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'slotName', 'posX', 'posY', 'posZ', 'yaw', 'district',
+                           'moneyTaka', 'chaosLevel', 'timeOfDay', 'weather',
+                           'ownedVehicles', 'completedMissions', 'unlockedDistricts',
+                           'inventoryItems', 'homeFurniture', 'homeLevel',
+                           'shirtColor', 'pantsColor', 'skinTone', 'hairStyle', 'hatStyle',
+                           'glassesStyle', 'expression', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(slotId);
+      }
+    }
+  }
+}

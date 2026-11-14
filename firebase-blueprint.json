@@ -1,0 +1,173 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Player account profile and global game preferences for Deshi Chaos.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the player."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Player display name."
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "bn"],
+          "description": "Selected UI language (English or Bangla)."
+        },
+        "graphicsQuality": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "3D rendering quality preset."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "displayName", "language", "graphicsQuality", "createdAt", "updatedAt"]
+    },
+    "SaveSlot": {
+      "title": "SaveSlot",
+      "description": "Persistent open-world game save state including player coordinates, money, vehicles, customization, home, and missions.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the save owner."
+        },
+        "slotName": {
+          "type": "string",
+          "description": "Human-readable name of the save slot."
+        },
+        "posX": {
+          "type": "number",
+          "description": "World X coordinate."
+        },
+        "posY": {
+          "type": "number",
+          "description": "World Y coordinate."
+        },
+        "posZ": {
+          "type": "number",
+          "description": "World Z coordinate."
+        },
+        "yaw": {
+          "type": "number",
+          "description": "Player facing angle in radians."
+        },
+        "district": {
+          "type": "string",
+          "enum": ["OLD_DHAKA", "MODERN_DHAKA", "RESIDENTIAL", "VILLAGE", "COMMERCIAL", "RIVERSIDE"],
+          "description": "Current active Bangladesh city district."
+        },
+        "moneyTaka": {
+          "type": "integer",
+          "description": "Player wallet balance in Bangladeshi Taka."
+        },
+        "chaosLevel": {
+          "type": "integer",
+          "description": "Current police wanted chaos stars (0 to 5)."
+        },
+        "timeOfDay": {
+          "type": "number",
+          "description": "In-game clock hour (0.0 to 24.0)."
+        },
+        "weather": {
+          "type": "string",
+          "enum": ["CLEAR", "CLOUDY", "RAIN", "MONSOON", "FOG"],
+          "description": "Current dynamic weather state."
+        },
+        "ownedVehicles": {
+          "type": "array",
+          "description": "List of owned vehicle type IDs (max 15)."
+        },
+        "completedMissions": {
+          "type": "array",
+          "description": "List of completed optional mission IDs (max 50)."
+        },
+        "unlockedDistricts": {
+          "type": "array",
+          "description": "List of discovered/unlocked district IDs (max 10)."
+        },
+        "inventoryItems": {
+          "type": "array",
+          "description": "List of collected/purchased items (max 40)."
+        },
+        "homeFurniture": {
+          "type": "array",
+          "description": "List of placed furniture IDs in player home (max 20)."
+        },
+        "homeLevel": {
+          "type": "integer",
+          "description": "Player home upgrade tier (1 to 5)."
+        },
+        "shirtColor": {
+          "type": "string",
+          "description": "Customized shirt palette key."
+        },
+        "pantsColor": {
+          "type": "string",
+          "description": "Customized pants palette key."
+        },
+        "skinTone": {
+          "type": "string",
+          "description": "Customized skin tone key."
+        },
+        "hairStyle": {
+          "type": "string",
+          "description": "Customized hair style key."
+        },
+        "hatStyle": {
+          "type": "string",
+          "description": "Customized hat/headgear key."
+        },
+        "glassesStyle": {
+          "type": "string",
+          "description": "Customized glasses key."
+        },
+        "expression": {
+          "type": "string",
+          "description": "Active funny facial expression key."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when save slot was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when save slot was last updated."
+        }
+      },
+      "required": [
+        "userId", "slotName", "posX", "posY", "posZ", "yaw", "district",
+        "moneyTaka", "chaosLevel", "timeOfDay", "weather",
+        "ownedVehicles", "completedMissions", "unlockedDistricts",
+        "inventoryItems", "homeFurniture", "homeLevel",
+        "shirtColor", "pantsColor", "skinTone", "hairStyle", "hatStyle",
+        "glassesStyle", "expression", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores player account profile and global preferences isolated per authenticated UID."
+    },
+    "/users/{userId}/save_slots/{slotId}": {
+      "schema": { "$ref": "#/entities/SaveSlot" },
+      "description": "Stores autosave and manual open-world game save slots owned by the player."
+    }
+  }
+}

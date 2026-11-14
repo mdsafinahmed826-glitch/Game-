@@ -1,0 +1,6 @@
+{
+  "name": "Deshi Chaos",
+  "description": "Bangladesh-inspired open-world 3D sandbox game with free roam, drivable vehicles, ragdoll physics, dynamic weather, living NPCs, and optional missions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
